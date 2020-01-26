@@ -12,49 +12,74 @@
 using namespace std;
 using namespace sf;
 
+
 bool MOVING = false;
 bool WORK = false;
-int w = 96, h = 96;
+float w = 96, h = 96;
+
 float speed = 0.3;
 
 pair <int,int>emp(0,0);
-
-struct Position{
-    float x;
-    float y;
-    pair <int,int>spr;
-}pos = {400,300,emp};
-
-struct thread_data{
-    zmq_msg_t msg_type;
-    void* socket_type;
-};
-
-Sprite enemysprite;
-Position pos_send, *pos_back;
-
 pair <int,int>l1(0,96);    pair <int,int>l2(96,96);    pair <int,int>l3(192,96);
 pair <int,int>r1(0,192);   pair <int,int>r2(96,192);   pair <int,int>r3(192,192);
 pair <int,int>u1(0,288);    pair <int,int>u2(96,288);    pair <int,int>u3(192,288);
 pair <int,int>d1(0,0);    pair <int,int>d2(96,0);   pair <int,int>d3(192,0);
 
+class Player{
+public:
+    float x, y, w, h;
+    String File;
+    Image image;
+    Texture texture;
+    Sprite sprite;
 
-string address_pull = "tcp://*:4040";
-string address_push = "tcp://localhost:4041";
+    Player();
 
+    Player(String F, float X, float Y, float W, float H){
+        File = F;
+        w = W; h = H;
+        image.loadFromFile("sprites/" + File);
+        //image.createMaskFromColor(Color(44,33,59));
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        x = X; y = Y;
+        sprite.setTextureRect(IntRect(0,0,w,h));
+    }
+    void setPosition(float X, float Y){
+        sprite.setPosition(X,Y);
+    }
+    void move(float dX, float dY){
+        sprite.move(dX,dY);
+    }
+    void setTextureRect(pair <int,int>s){
+        sprite.setTextureRect(IntRect(s.first,s.second,w,h));
+    }
+};
 
+struct Position{
+    float x;
+    float y;
+    pair <int,int>spr;
+};
+Position pos = {400,300,emp};
+Position *pos_back;
+
+string push_port = "4041"; //tcp://localhost:
+string pull_port = "4040"; //tcp://*:
+
+struct thread_data{
+    zmq_msg_t msg_type;
+    void* socket_type;
+};
 void* ptp_get(void *args){
     thread_data *data = (thread_data*) args;
     zmq_msg_t recv = data->msg_type;
     void* pull = data->socket_type;
-    cout << "there_thread" << endl;
     while(WORK){
         zmq_msg_init(&recv);
         zmq_msg_recv(&recv, pull, 0);
         pos_back = (Position *) zmq_msg_data(&recv); 
         zmq_msg_close(&recv);
-
-        enemysprite.setTextureRect(IntRect(pos_back->spr.first,pos_back->spr.second,w,h));
     }
     return (void *) 1;
 }
@@ -74,96 +99,120 @@ void* ptp_send(void *args){
     }
     return (void *) 1;
 }
+class Connection{
+private:
+    bool pushPTH = false, pullPTH = false;
+    pthread_t thread_recv, thread_send;
+
+    void* context;
+    void* pull;
+    void* push;
+    zmq_msg_t send, recv;
+
+    string address_push, address_pull;
+public:
+    Connection(string port_push, string port_pull){
+        address_push = "tcp://localhost:" + port_push;
+        address_pull = "tcp://*:" + port_pull;
+
+        context = zmq_ctx_new();
+
+        pull = zmq_socket(context, ZMQ_PULL);
+        if(zmq_bind(pull, address_pull.c_str()) < 0){
+            strerror(errno);
+        }
+
+        push = zmq_socket(context, ZMQ_PUSH);
+        if(zmq_connect(push, address_push.c_str()) == 0){
+            cout << address_push.c_str() << "-connected to " << address_push.c_str() << " for PUSH" << endl;
+        }
+    }
+
+    void pushPos(){
+        zmq_msg_init_size(&send, sizeof(Position));
+        memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
+        zmq_msg_send(&send, push, 0);
+        zmq_msg_close(&send);
+    }
+    void pushPosThreaded(){
+        if(!pushPTH){
+            int status_push;
+            thread_data data_pub = {send, push};
+
+            status_push = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_pub);
+            if(status_push != 0) {
+                pushPTH = false;
+                cout << "main error: can't create thread_recv, status_push = " << status_push << endl;
+                exit(-11);
+                //return 0;
+            }
+            else if(status_push == 0){
+                pushPTH = true;
+                cout << "-Threaded pushing..." << endl;
+            }
+        }
+        else{
+            cout << "Threaded pushing is already running...." << endl;
+        }
+    }
+    void pullPos(){
+        zmq_msg_init(&recv);
+        zmq_msg_recv(&recv, pull, 0);
+        pos_back = (Position *) zmq_msg_data(&recv); 
+        zmq_msg_close(&recv);
+    }
+    void pullPosThreaded(){
+        if(!pullPTH){
+            int status_pull;
+            thread_data data_recv = {recv, pull};
+            status_pull = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
+            if(status_pull != 0) {
+                pullPTH = false;
+                cout << "main error: can't create thread_pull, status_pull = " << status_pull << endl;
+                exit(-11);
+                //return 0;
+            }
+            else if(status_pull == 0){
+                pullPTH = true;
+                cout << "-Threaded pulling..." << endl;
+            }
+        }
+        else{
+            cout << "Threaded pulling is already running...." << endl;
+        }
+    }
+
+};
 
 int main()
 {
-    pos.spr = l1;
+    Connection conn(push_port, pull_port);
 
-    void* context = zmq_ctx_new();
-
-    void* pull = zmq_socket(context, ZMQ_PULL);
-    if(zmq_bind(pull, address_pull.c_str())<0)
-        strerror(errno);
-
-    void* push = zmq_socket(context, ZMQ_PUSH);
-    if(zmq_connect(push, address_push.c_str()) == 0){
-        cout <<"-connected to " << address_push.c_str() << " for PUSH" << endl;
-    }
-
-    zmq_msg_t recv, send;
-
-    pos_send = pos;
-
-    zmq_msg_init_size(&send, sizeof(Position));
-    memcpy(zmq_msg_data(&send), &pos_send, sizeof(Position));
-    zmq_msg_send(&send, push, 0);
-    zmq_msg_close(&send);
-
-    zmq_msg_init(&recv);
-    zmq_msg_recv(&recv, pull, 0);
-    pos_back = (Position *) zmq_msg_data(&recv); 
-    zmq_msg_close(&recv);
+    conn.pushPos();
+    conn.pullPos();
 
     WORK = true;
-////////////////////////////////////////////////////////////////////////////////////////
-    bool PTHREAD = false;
-    pthread_t thread_send, thread_recv;
 
-    int status_send, status_send_addr;
-    thread_data data_send = {send, push};
-    
-    status_send = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_send);
-    if(status_send != 0) {
-        PTHREAD = false;
-        printf("main error: can't create thread, status = %d\n", status_send);
-        exit(-11);
-        return 0;
-    }
-    else if(status_send == 0){
-        PTHREAD = true;
-    }
-
-    int status_recv, status_recv_addr;
-    thread_data data_recv = {recv, pull};
-
-    status_recv = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
-    if(status_recv != 0) {
-        PTHREAD = false;
-        printf("main error: can't create thread, status = %d\n", status_recv);
-        exit(-11);
-        return 0;
-    }
-    else if(status_recv == 0){
-        PTHREAD = true;
-    }
-/////////////////////////////////////////////////////////////////////////////////////////////////
+    conn.pushPosThreaded();
+    conn.pullPosThreaded();
 
     RenderWindow window(sf::VideoMode(640, 480), "Game_sub"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
-
-    pair <int,int>s;
-    Image heroimage;
-    heroimage.loadFromFile("sprites/hero.png");
-
-    Texture herotexture;
-    herotexture.loadFromImage(heroimage);
-
-    Sprite herosprite;
-
-    s = r1;
-    //cout << pos_back->x << endl;
-    herosprite.setTexture(herotexture);
-    herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
-    herosprite.setPosition(pos.x, pos.y);
     
-    enemysprite.setTexture(herotexture);
-    enemysprite.setTextureRect(IntRect(pos_back->spr.first,pos_back->spr.second,w,h));
-    enemysprite.setPosition(pos_back->x, pos_back->y);
+    pair <int,int>s;
+
+    Player player("hero.png",0,0,w,h);
+    player.setPosition(pos.x, pos.y);
+
+    Player enemy("hero.png",0,0,w,h);
+    enemy.setPosition(pos_back->x, pos_back->y);
 
     Clock clock;
+
     while (window.isOpen())
     {
-        enemysprite.setPosition(pos_back->x, pos_back->y);
+        enemy.setTextureRect(pos_back->spr);
+        enemy.setPosition(pos_back->x, pos_back->y);
 
         float time = clock.getElapsedTime().asMicroseconds();
         clock.restart();
@@ -174,7 +223,6 @@ int main()
         while (window.pollEvent(event))
         {
             if (event.type == Event::Closed){
-                PTHREAD = false;
                 WORK = false;
                 window.close();
             }
@@ -182,7 +230,6 @@ int main()
 
         if(Keyboard::isKeyPressed(Keyboard::LControl) && Keyboard::isKeyPressed(Keyboard::C))
         {
-            PTHREAD = false;
             WORK = false;
             window.close();
         }
@@ -193,10 +240,9 @@ int main()
             else if(s == l3)    {s = l1; pos.spr = l1;}
             else                {s = l1; pos.spr = l1;}
 
-            herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
             pos.x -= speed*time;
             MOVING = true;
-            herosprite.move(-speed*time,0);
+            player.move(-speed*time,0);
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Right)){
@@ -205,10 +251,9 @@ int main()
             else if(s == r3)    {s = r1; pos.spr = r1;}
             else                {s = r1; pos.spr = r1;}
 
-            herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
             pos.x += speed*time;
             MOVING = true;
-            herosprite.move(speed*time,0);
+            player.move(speed*time,0);
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Up)){
@@ -217,10 +262,9 @@ int main()
             else if(s == u3)    {s = u1; pos.spr = u1;}
             else                {s = u1; pos.spr = u1;}
 
-            herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
             pos.y -= speed*time;
             MOVING = true;
-            herosprite.move(0,-speed*time);
+            player.move(0,-speed*time);
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Down)){
@@ -229,30 +273,17 @@ int main()
             else if(s == d3)    {s = d1; pos.spr = d1;}
             else                {s = d1; pos.spr = d1;}
 
-            herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
             pos.y += speed*time;
             MOVING = true;
-            herosprite.move(0,speed*time);
+            player.move(0,speed*time);
         }
-        pos_send = pos;
+        player.setTextureRect(s);
+
         window.clear();
-        window.draw(herosprite);
-        window.draw(enemysprite);
+        window.draw(player.sprite);
+        window.draw(enemy.sprite);
         window.display();
         MOVING = false;
     }
     return 0;
-    /*if(!PTHREAD){
-        status_send = pthread_join(thread_send, (void **) &status_send_addr);
-        if(status_send_addr != 1){
-            printf("ERROR\n");
-            return 0;
-        }
-        status_recv = pthread_join(thread_recv, (void **) &status_recv_addr);
-        if(status_recv_addr != 1){
-            printf("ERROR\n");
-            return 0;
-        }
-        return 0;
-    }*/
 }

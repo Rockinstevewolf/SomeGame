@@ -20,28 +20,10 @@ float w = 96, h = 96;
 float speed = 0.3;
 
 pair <int,int>emp(0,0);
-
-struct Position{
-    float x;
-    float y;
-    pair <int,int>spr;
-}pos = {50,25,emp};
-
-struct thread_data{
-    zmq_msg_t msg_type;
-    void* socket_type;
-};
-
-Position pos_send, *pos_back;
-
 pair <int,int>l1(0,96);    pair <int,int>l2(96,96);    pair <int,int>l3(192,96);
 pair <int,int>r1(0,192);   pair <int,int>r2(96,192);   pair <int,int>r3(192,192);
 pair <int,int>u1(0,288);    pair <int,int>u2(96,288);    pair <int,int>u3(192,288);
 pair <int,int>d1(0,0);    pair <int,int>d2(96,0);   pair <int,int>d3(192,0);
-
-
-string address_push = "tcp://localhost:4040";
-string address_pull = "tcp://*:4041";
 
 class Player{
 public:
@@ -74,28 +56,21 @@ public:
     }
 };
 
-/*
-class Connection{
-public:
-    zmq_msg_t send, recv;
+struct Position{
+    float x;
+    float y;
+    pair <int,int>spr;
+};
+Position pos = {50,25,emp};
+Position *pos_back;
 
-    Connection(){
-        void* context = zmq_ctx_new();
+string push_port = "4040"; //tcp://localhost:
+string pull_port = "4041"; //tcp://*:
 
-        void* pull = zmq_socket(context, ZMQ_PULL);
-        if(zmq_bind(pull, address_pull.c_str()) < 0){
-            strerror(errno);
-        }
-
-        void* push = zmq_socket(context, ZMQ_PUSH);
-        if(zmq_connect(push, address_push.c_str()) == 0){
-            cout <<"-connected to " << address_push.c_str() << " for PUSH" << endl;
-        }
-    }
-
-};*/
-
-
+struct thread_data{
+    zmq_msg_t msg_type;
+    void* socket_type;
+};
 void* ptp_get(void *args){
     thread_data *data = (thread_data*) args;
     zmq_msg_t recv = data->msg_type;
@@ -124,73 +99,102 @@ void* ptp_send(void *args){
     }
     return (void *) 1;
 }
+class Connection{
+private:
+    bool pushPTH = false, pullPTH = false;
+    pthread_t thread_recv, thread_send;
 
+    void* context;
+    void* pull;
+    void* push;
+    zmq_msg_t send, recv;
+
+    string address_push, address_pull;
+public:
+    Connection(string port_push, string port_pull){
+        address_push = "tcp://localhost:" + port_push;
+        address_pull = "tcp://*:" + port_pull;
+
+        context = zmq_ctx_new();
+
+        pull = zmq_socket(context, ZMQ_PULL);
+        if(zmq_bind(pull, address_pull.c_str()) < 0){
+            strerror(errno);
+        }
+
+        push = zmq_socket(context, ZMQ_PUSH);
+        if(zmq_connect(push, address_push.c_str()) == 0){
+            cout << address_push.c_str() << "-connected to " << address_push.c_str() << " for PUSH" << endl;
+        }
+    }
+
+    void pushPos(){
+        zmq_msg_init_size(&send, sizeof(Position));
+        memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
+        zmq_msg_send(&send, push, 0);
+        zmq_msg_close(&send);
+    }
+    void pushPosThreaded(){
+        if(!pushPTH){
+            int status_push;
+            thread_data data_pub = {send, push};
+
+            status_push = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_pub);
+            if(status_push != 0) {
+                pushPTH = false;
+                cout << "main error: can't create thread_recv, status_push = " << status_push << endl;
+                exit(-11);
+                //return 0;
+            }
+            else if(status_push == 0){
+                pushPTH = true;
+                cout << "-Threaded pushing..." << endl;
+            }
+        }
+        else{
+            cout << "Threaded pushing is already running...." << endl;
+        }
+    }
+    void pullPos(){
+        zmq_msg_init(&recv);
+        zmq_msg_recv(&recv, pull, 0);
+        pos_back = (Position *) zmq_msg_data(&recv); 
+        zmq_msg_close(&recv);
+    }
+    void pullPosThreaded(){
+        if(!pullPTH){
+            int status_pull;
+            thread_data data_recv = {recv, pull};
+            status_pull = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
+            if(status_pull != 0) {
+                pullPTH = false;
+                cout << "main error: can't create thread_pull, status_pull = " << status_pull << endl;
+                exit(-11);
+                //return 0;
+            }
+            else if(status_pull == 0){
+                pullPTH = true;
+                cout << "-Threaded pulling..." << endl;
+            }
+        }
+        else{
+            cout << "Threaded pulling is already running...." << endl;
+        }
+    }
+
+};
 
 int main()
 {
-    pos.spr = r1;
+    Connection conn(push_port, pull_port);
 
-    void* context = zmq_ctx_new();
-
-    void* pull = zmq_socket(context, ZMQ_PULL);
-    if(zmq_bind(pull, address_pull.c_str())<0)
-        strerror(errno);
-
-    void* push = zmq_socket(context, ZMQ_PUSH);
-    if(zmq_connect(push, address_push.c_str()) == 0){
-        cout <<"-connected to " << address_push.c_str() << " for PUSH" << endl;
-    }
-    
-    zmq_msg_t send, recv;
-
-
-    pos_send = pos;
-
-    zmq_msg_init(&recv);
-    zmq_msg_recv(&recv, pull, 0);
-    pos_back = (Position *) zmq_msg_data(&recv); 
-    zmq_msg_close(&recv);
-
-    zmq_msg_init_size(&send, sizeof(Position));
-    memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
-    zmq_msg_send(&send, push, 0);
-    zmq_msg_close(&send);
+    conn.pullPos();
+    conn.pushPos();
 
     WORK = true;
-////////////////////////////////////////////////////////////////////////////////////////
-    bool PTHREAD = false;
-    pthread_t thread_recv, thread_send;
 
-
-    int status_pull; //status_pull_addr;
-    thread_data data_recv = {recv, pull};
-    
-    status_pull = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
-    if(status_pull != 0) {
-        PTHREAD = false;
-        cout << "main error: can't create thread_pull, status_pull = " << status_pull << endl;
-        exit(-11);
-        return 0;
-    }
-    else if(status_pull == 0){
-        PTHREAD = true;
-    }
-
-    int status_push; //status_push_addr;
-    thread_data data_pub = {send, push};
-
-    status_push = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_pub);
-    if(status_push != 0) {
-        PTHREAD = false;
-        cout << "main error: can't create thread_recv, status_push = " << status_push << endl;
-        exit(-11);
-        return 0;
-    }
-    else if(status_push == 0){
-        PTHREAD = true;
-    }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////
+    conn.pullPosThreaded();
+    conn.pushPosThreaded();
 
     RenderWindow window(sf::VideoMode(640, 480), "Game"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
@@ -219,7 +223,6 @@ int main()
         while (window.pollEvent(event))
         {
             if (event.type == Event::Closed){
-                PTHREAD = false;
                 WORK = false;
                 window.close();
             }
@@ -227,7 +230,6 @@ int main()
 
         if(Keyboard::isKeyPressed(Keyboard::LControl) && Keyboard::isKeyPressed(Keyboard::C))
         {
-            PTHREAD = false;
             WORK = false;
             window.close();
         }
@@ -277,7 +279,6 @@ int main()
         }
         player.setTextureRect(s);
 
-        pos_send = pos;
         window.clear();
         window.draw(player.sprite);
         window.draw(enemy.sprite);
