@@ -17,14 +17,13 @@ bool WORK = false;
 int w = 96, h = 96;
 float speed = 0.3;
 
-
 pair <int,int>emp(0,0);
 
 struct Position{
     float x;
     float y;
     pair <int,int>spr;
-}pos = {50,25,emp};
+}pos = {400,300,emp};
 
 struct thread_data{
     zmq_msg_t msg_type;
@@ -43,13 +42,15 @@ pair <int,int>u1(0,288);    pair <int,int>u2(96,288);    pair <int,int>u3(192,28
 pair <int,int>d1(0,0);    pair <int,int>d2(96,0);   pair <int,int>d3(192,0);
 
 
-string address_push = "tcp://localhost:4040";
-string address_pull = "tcp://*:4041";
+string address_pull = "tcp://*:4040";
+string address_push = "tcp://localhost:4041";
+
 
 void* ptp_get(void *args){
     thread_data *data = (thread_data*) args;
     zmq_msg_t recv = data->msg_type;
     void* pull = data->socket_type;
+    cout << "there_thread" << endl;
     while(WORK){
         zmq_msg_init(&recv);
         zmq_msg_recv(&recv, pull, 0);
@@ -67,7 +68,7 @@ void* ptp_send(void *args){
     void* push = data->socket_type;
     while(WORK){
         if(MOVING){
-            cout << "sending...   " << pos.x << endl;
+            cout << "sending...   " << "x = " << pos.x  << "y = " << pos.y << endl;
             zmq_msg_init_size(&send, sizeof(Position));
             memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
             zmq_msg_send(&send, push, 0);
@@ -77,10 +78,9 @@ void* ptp_send(void *args){
     return (void *) 1;
 }
 
-
 int main()
 {
-    pos.spr = r1;
+    pos.spr = l1;
 
     void* context = zmq_ctx_new();
 
@@ -92,61 +92,58 @@ int main()
     if(zmq_connect(push, address_push.c_str()) == 0){
         cout <<"-connected to " << address_push.c_str() << " for PUSH" << endl;
     }
-    
-    zmq_msg_t send, recv;
 
+    zmq_msg_t recv, send;
 
     pos_send = pos;
+
+    zmq_msg_init_size(&send, sizeof(Position));
+    memcpy(zmq_msg_data(&send), &pos_send, sizeof(Position));
+    zmq_msg_send(&send, push, 0);
+    zmq_msg_close(&send);
 
     zmq_msg_init(&recv);
     zmq_msg_recv(&recv, pull, 0);
     pos_back = (Position *) zmq_msg_data(&recv); 
     zmq_msg_close(&recv);
 
-    zmq_msg_init_size(&send, sizeof(Position));
-    memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
-    zmq_msg_send(&send, push, 0);
-    zmq_msg_close(&send);
-
     WORK = true;
 ////////////////////////////////////////////////////////////////////////////////////////
     bool PTHREAD = false;
-    pthread_t thread_recv, thread_send;
+    pthread_t thread_send, thread_recv;
 
-
-    int status_pull, status_pull_addr;
-    thread_data data_recv = {recv, pull};
+    int status_send, status_send_addr;
+    thread_data data_send = {send, push};
     
-    status_pull = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
-    if(status_pull != 0) {
+    status_send = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_send);
+    if(status_send != 0) {
         PTHREAD = false;
-        printf("main error: can't create thread_recv, status_pull = %d\n", status_pull);
+        printf("main error: can't create thread, status = %d\n", status_send);
         exit(-11);
         return 0;
     }
-    else if(status_pull == 0){
+    else if(status_send == 0){
         PTHREAD = true;
     }
 
-    int status_push, status_push_addr;
-    thread_data data_pub = {send, push};
+    int status_recv, status_recv_addr;
+    thread_data data_recv = {recv, pull};
 
-    status_push = pthread_create(&thread_send, NULL, ptp_send, (void *) &data_pub);
-    if(status_push != 0) {
+    status_recv = pthread_create(&thread_recv, NULL, ptp_get, (void *) &data_recv);
+    if(status_recv != 0) {
         PTHREAD = false;
-        printf("main error: can't create thread_recv, status_pull = %d\n", status_push);
+        printf("main error: can't create thread, status = %d\n", status_recv);
         exit(-11);
         return 0;
     }
-    else if(status_push == 0){
+    else if(status_recv == 0){
         PTHREAD = true;
     }
-
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
     RenderWindow window(sf::VideoMode(640, 480), "Game"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
-    
+
     pair <int,int>s;
     Image heroimage;
     heroimage.loadFromFile("sprites/hero.png");
@@ -157,16 +154,16 @@ int main()
     Sprite herosprite;
 
     s = r1;
+    //cout << pos_back->x << endl;
     herosprite.setTexture(herotexture);
     herosprite.setTextureRect(IntRect(s.first,s.second,w,h));
     herosprite.setPosition(pos.x, pos.y);
-
+    
     enemysprite.setTexture(herotexture);
     enemysprite.setTextureRect(IntRect(pos_back->spr.first,pos_back->spr.second,w,h));
     enemysprite.setPosition(pos_back->x, pos_back->y);
 
     Clock clock;
-
     while (window.isOpen())
     {
         enemysprite.setPosition(pos_back->x, pos_back->y);
@@ -249,13 +246,13 @@ int main()
     }
     return 0;
     if(!PTHREAD){
-        status_pull = pthread_join(thread_recv, (void **) &status_pull_addr);
-        if(status_pull_addr != 1){
+        status_send = pthread_join(thread_send, (void **) &status_send_addr);
+        if(status_send_addr != 1){
             printf("ERROR\n");
             return 0;
         }
-        status_push = pthread_join(thread_send, (void **) &status_push_addr);
-        if(status_push_addr != 1){
+        status_recv = pthread_join(thread_recv, (void **) &status_recv_addr);
+        if(status_recv_addr != 1){
             printf("ERROR\n");
             return 0;
         }
