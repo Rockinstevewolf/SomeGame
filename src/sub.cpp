@@ -34,11 +34,8 @@ Sprite enemysprite;
 Position pos_send, *pos_back;
 
 pair <int,int>l1(0,96);    pair <int,int>l2(96,96);    pair <int,int>l3(192,96);
-
 pair <int,int>r1(0,192);   pair <int,int>r2(96,192);   pair <int,int>r3(192,192);
-
 pair <int,int>u1(0,288);    pair <int,int>u2(96,288);    pair <int,int>u3(192,288);
-
 pair <int,int>d1(0,0);    pair <int,int>d2(96,0);   pair <int,int>d3(192,0);
 
 
@@ -68,7 +65,7 @@ void* ptp_send(void *args){
     void* push = data->socket_type;
     while(WORK){
         if(MOVING){
-            cout << "sending...   " << "x = " << pos.x  << "y = " << pos.y << endl;
+            cout << "sending...   " << "x = " << pos.x  << " y = " << pos.y << endl;
             zmq_msg_init_size(&send, sizeof(Position));
             memcpy(zmq_msg_data(&send), &pos, sizeof(Position));
             zmq_msg_send(&send, push, 0);
@@ -141,7 +138,7 @@ int main()
     }
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-    RenderWindow window(sf::VideoMode(640, 480), "Game"/*, Style::Fullscreen*/);
+    RenderWindow window(sf::VideoMode(640, 480), "Game_sub"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
 
     pair <int,int>s;
@@ -245,7 +242,7 @@ int main()
         MOVING = false;
     }
     return 0;
-    if(!PTHREAD){
+    /*if(!PTHREAD){
         status_send = pthread_join(thread_send, (void **) &status_send_addr);
         if(status_send_addr != 1){
             printf("ERROR\n");
@@ -257,5 +254,5 @@ int main()
             return 0;
         }
         return 0;
-    }
+    }*/
 }
