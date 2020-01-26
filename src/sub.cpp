@@ -201,10 +201,10 @@ int main()
     
     pair <int,int>s;
 
-    Player player("hero.png",0,0,w,h);
+    Player player("hero3.png",0,0,w,h);
     player.setPosition(pos.x, pos.y);
 
-    Player enemy("hero.png",0,0,w,h);
+    Player enemy("hero4.png",0,0,w,h);
     enemy.setPosition(pos_back->x, pos_back->y);
 
     Clock clock;
