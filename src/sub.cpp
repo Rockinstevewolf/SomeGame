@@ -12,6 +12,7 @@
 using namespace std;
 using namespace sf;
 
+#include "map.hpp"
 
 bool MOVING = false;
 bool WORK = false;
@@ -26,8 +27,10 @@ pair <int,int>u1(0,288);    pair <int,int>u2(96,288);    pair <int,int>u3(192,28
 pair <int,int>d1(0,0);    pair <int,int>d2(96,0);   pair <int,int>d3(192,0);
 
 class Player{
+private:
+    float x, y;
 public:
-    float x, y, w, h;
+    float w, h;
     String File;
     Image image;
     Texture texture;
@@ -46,6 +49,8 @@ public:
         sprite.setTextureRect(IntRect(0,0,w,h));
     }
     void setPosition(float X, float Y){
+        x = X;
+        y = Y;
         sprite.setPosition(X,Y);
     }
     void move(float dX, float dY){
@@ -196,13 +201,25 @@ int main()
     conn.pushPosThreaded();
     conn.pullPosThreaded();
 
-    RenderWindow window(sf::VideoMode(640, 480), "Game_sub"/*, Style::Fullscreen*/);
+    RenderWindow window(sf::VideoMode(RES_WIDTH, RES_HEIGHT), "Game_sub"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
     
     pair <int,int>s;
 
+    Image map_image;
+    map_image.loadFromFile("sprites/map.png");
+    Texture map;
+    map.loadFromImage(map_image);
+    Sprite s_map;
+    s_map.setTexture(map);
+
+    //vector<string> m = mapCreate(640,480);
+    //cout << m.size() << endl;
+
     Player player("hero3.png",0,0,w,h);
     player.setPosition(pos.x, pos.y);
+
+    View view;
 
     Player enemy("hero4.png",0,0,w,h);
     enemy.setPosition(pos_back->x, pos_back->y);
@@ -280,6 +297,20 @@ int main()
         player.setTextureRect(s);
 
         window.clear();
+        for(int i = 0; i < RES_HEIGHT/32; i++){
+            string get = m[i];
+            for(int j = 0; j < RES_WIDTH/32; j++){
+                if(get[j] == ' ')
+                    s_map.setTextureRect(IntRect(0,0,32,32));
+                if(get[j] == 's')
+                    s_map.setTextureRect(IntRect(32,0,32,32));
+                if(get[j] == '0')
+                    s_map.setTextureRect(IntRect(64,0,32,32));
+
+            s_map.setPosition(j*32,i*32);
+            window.draw(s_map);
+            }
+        }
         window.draw(player.sprite);
         window.draw(enemy.sprite);
         window.display();

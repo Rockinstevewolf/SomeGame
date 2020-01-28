@@ -12,6 +12,8 @@
 using namespace std;
 using namespace sf;
 
+#include "map.hpp"
+
 
 bool MOVING = false;
 bool WORK = false;
@@ -196,10 +198,17 @@ int main()
     conn.pullPosThreaded();
     conn.pushPosThreaded();
 
-    RenderWindow window(sf::VideoMode(640, 480), "Game"/*, Style::Fullscreen*/);
+    RenderWindow window(sf::VideoMode(RES_WIDTH, RES_HEIGHT), "Game"/*, Style::Fullscreen*/);
     cout << "let's go..." << endl;
     
     pair <int,int>s;
+
+    Image map_image;
+    map_image.loadFromFile("sprites/map.png");
+    Texture map;
+    map.loadFromImage(map_image);
+    Sprite s_map;
+    s_map.setTexture(map);
 
     Player player("hero4.png",0,0,w,h);
     player.setPosition(pos.x, pos.y);
@@ -280,6 +289,20 @@ int main()
         player.setTextureRect(s);
 
         window.clear();
+        for(int i = 0; i < RES_HEIGHT/32; i++){
+            string get = m[i];
+            for(int j = 0; j < RES_WIDTH/32; j++){
+                if(get[j] == ' ')
+                    s_map.setTextureRect(IntRect(0,0,32,32));
+                if(get[j] == 's')
+                    s_map.setTextureRect(IntRect(32,0,32,32));
+                if(get[j] == '0')
+                    s_map.setTextureRect(IntRect(64,0,32,32));
+
+            s_map.setPosition(j*32,i*32);
+            window.draw(s_map);
+            }
+        }
         window.draw(player.sprite);
         window.draw(enemy.sprite);
         window.display();
