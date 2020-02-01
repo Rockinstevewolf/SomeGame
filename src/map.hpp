@@ -1,5 +1,4 @@
-#include <SFML/Graphics.hpp>
-#include <iostream>
+/*#include <SFML/Graphics.hpp>
 
 const int HEIGHT_MAP = 15;//25;//размер карты высота
 const int WIDTH_MAP = 20;//40;//размер карты ширина  
@@ -19,7 +18,10 @@ sf::String TileMap[HEIGHT_MAP] = {
     "0    s             0",
     "0    s             0",
     "00000000000000000000",
-};
+};*/
+#pragma once
+
+#include <iostream>
 
 const int RES_WIDTH = 640;
 const int RES_HEIGHT = 480;
@@ -27,7 +29,7 @@ const int RES_HEIGHT = 480;
 std::string randLine(int res_w){
     std::string mid = "0";
     for(int i = 1; i < res_w/32 - 1; i++){
-        int a = rand()%50;
+        int a = rand()%35;
         if(a == 1){
             mid += "s";
         }
@@ -36,7 +38,6 @@ std::string randLine(int res_w){
         }
     }
     mid += "0";
-    //cout << mid.size() << endl;
     return mid;
 }
 
@@ -54,10 +55,8 @@ std::vector<string> mapCreate(int res_w, int res_h){
             map.push_back(randLine(res_w));
         cout << map[j] << endl;
     }
-    //cout << border << endl;
-    //cout << mid << endl;
-    //cout << map[1] << endl;
     return map;
 }
 
-std::vector<string> m = mapCreate(RES_WIDTH,RES_HEIGHT);
+
+std::vector<string> m = mapCreate(RES_WIDTH, RES_HEIGHT);
