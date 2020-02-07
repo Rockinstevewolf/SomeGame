@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include "map.hpp"
 
 class Player{
 private:
@@ -17,7 +18,7 @@ public:
         File = F;
         w = W; h = H;
         image.loadFromFile("sprites/" + File);
-        //image.createMaskFromColor(Color(44,33,59));
+        image.createMaskFromColor(Color(41,33,59));
         texture.loadFromImage(image);
         sprite.setTexture(texture);
         x = X; y = Y;
@@ -41,4 +42,14 @@ public:
     float Y(){
         return y;
     }
+/*
+    void interactionMap(){
+        for(int i = y/32; i < (y + h)/32; i++)
+            string get = m[i];
+            for(int j = x/32; j < (x + h)/32; j++){
+                if(get[j] == '0'){
+                    if()
+                }
+            }
+    }*/
 };

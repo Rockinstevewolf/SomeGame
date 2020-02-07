@@ -36,11 +36,9 @@ int main()
 
     player1.pushPos(data2.pos);
     player2.pushPos(data1.pos);
-    
+
     player1.flags = {true,true};
     player2.flags = {true,true};
-
-
 
     player1.pullPosThreaded(&data1);
     player2.pullPosThreaded(&data2);

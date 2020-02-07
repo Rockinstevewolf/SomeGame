@@ -10,6 +10,8 @@
 
 using namespace std;
 
+bool PAUSE;
+
 void* ptp_get(void *args);
 
 void* ptp_send(void *args);
@@ -118,12 +120,16 @@ void* ptp_get(void *args){
         zmq_msg_recv(&recv, pull, 0);
         PP_data *buffer = (PP_data *) zmq_msg_data(&recv);
         if(buffer->CLOSE == true){
-            cout << "enemy disconnected..." << endl;
+            PAUSE = true;
+        }
+        else{
+            PAUSE = false;
         }
         data->pos = (*buffer);
         zmq_msg_close(&recv);
         //cout << data->pos.x << endl;
     }
+    cout << "-get thread quit..." << endl;
     return (void *) 1;
 }
 
@@ -133,7 +139,7 @@ void* ptp_send(void *args){
     void *push = data->socket_type;
     bool WORK = true;
     while(WORK){
-        if(data->flags.MOVING){
+        if(data->flags.MOVING && PAUSE == false){
             cout << "sending...   " << "x = " << data->pos.x  << " y = " << data->pos.y << endl;
             zmq_msg_init_size(&send, sizeof(PP_data));
             memcpy(zmq_msg_data(&send), &data->pos, sizeof(PP_data));
@@ -141,5 +147,6 @@ void* ptp_send(void *args){
             zmq_msg_close(&send);
         }
     }
+    cout << "-send thread quit..." << endl;
     return (void *) 1;
 }

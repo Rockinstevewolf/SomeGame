@@ -56,7 +56,7 @@ int main()
     enemy.setPosition(enemy_data.pos.x, enemy_data.pos.y);
 
     Clock clock;
-
+    my_data.pos.CLOSE = false;
     while (window.isOpen())
     {
         enemy.setTextureRect(enemy_data.pos.spr);
@@ -74,7 +74,10 @@ int main()
                 conn.flags.WORK = false;
                 my_data.flags.WORK = false;
                 window.close();
+                system("clear");
                 cout << "quit..." << endl;
+                my_data.pos.CLOSE = true;
+                conn.pushPos(my_data.pos);
             }
         }
 
@@ -83,7 +86,10 @@ int main()
             conn.flags.WORK = false;
             my_data.flags.WORK = false;
             window.close();
+            system("clear");
             cout << "quit..." << endl;
+            my_data.pos.CLOSE = true;
+            conn.pushPos(my_data.pos);
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Left)){

@@ -9,7 +9,7 @@ typedef struct PP_data{
     float x;
     float y;
     pair <int,int>spr;
-    bool CLOSE = false;
+    bool CLOSE;
 }PP_data;
 
 typedef struct Flags{

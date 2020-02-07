@@ -1,4 +1,4 @@
-sub_*
+sub_*.cpp
 main_*
 test*
 view*

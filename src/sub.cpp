@@ -55,8 +55,10 @@ int main()
     Player enemy("hero4.png",0,0,w,h);
     enemy.setPosition(enemy_data.pos.x, enemy_data.pos.y);
 
-    Clock clock;
+    float dx = 0, dy = 0;
 
+    Clock clock;
+    my_data.pos.CLOSE = false;
     while (window.isOpen())
     {
         enemy.setTextureRect(enemy_data.pos.spr);
@@ -74,7 +76,10 @@ int main()
                 conn.flags.WORK = false;
                 my_data.flags.WORK = false;
                 window.close();
+                system("clear");
                 cout << "quit..." << endl;
+                my_data.pos.CLOSE = true;
+                conn.pushPos(my_data.pos);
             }
         }
 
@@ -83,7 +88,10 @@ int main()
             conn.flags.WORK = false;
             my_data.flags.WORK = false;
             window.close();
+            system("clear");
             cout << "quit..." << endl;
+            my_data.pos.CLOSE = true;
+            conn.pushPos(my_data.pos);
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Left)){
@@ -96,7 +104,8 @@ int main()
             my_pos.x -= speed*time;
             my_data.pos = my_pos;
             my_data.flags.MOVING = true;
-            player.move(-speed*time,0);
+            //player.move(-speed*time,0);
+            dx = -speed*time;
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Right)){
@@ -109,7 +118,8 @@ int main()
             my_pos.x += speed*time;
             my_data.pos = my_pos;
             my_data.flags.MOVING = true;
-            player.move(speed*time,0);
+            //player.move(speed*time,0);
+            dx = speed*time;
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Up)){
@@ -122,7 +132,8 @@ int main()
             my_pos.y -= speed*time;
             my_data.pos = my_pos;
             my_data.flags.MOVING = true;
-            player.move(0,-speed*time);
+            //player.move(0,-speed*time);
+            dy = -speed*time;
         }
 
         if(Keyboard::isKeyPressed(Keyboard::Down)){
@@ -135,9 +146,27 @@ int main()
             my_pos.y += speed*time;
             my_data.pos = my_pos;
             my_data.flags.MOVING = true;
-            player.move(0,speed*time);
+            //player.move(0,speed*time);
+            dy = speed*time;
         }
         player.setTextureRect(s);
+        player.move(dx,dy);
+
+        /*for(int i = player.Y()/32; i < (player.Y() + h)/32; i++){
+            string get = m[i];
+            for(int j = player.X()/32; j < (player.X() + h)/32; j++){
+                if(get[j] == '0'){
+                    if(dy > 0)
+                        dy = 0;
+                    if(dy < 0)
+                        dy = 0;
+                    if(dx > 0)
+                        dx = 0;
+                    if(dx < 0)
+                        dx = 0;
+                }
+            }
+        }*/
 
         window.clear();
         for(int i = 0; i < RES_HEIGHT/32; i++){
@@ -154,9 +183,12 @@ int main()
             window.draw(s_map);
             }
         }
+
         window.draw(player.sprite);
         window.draw(enemy.sprite);
         window.display();
+        dx = 0;
+        dy = 0;
         my_data.flags.MOVING = false;
     }
     return 0;

@@ -29,7 +29,7 @@ const int RES_HEIGHT = 480;
 std::string randLine(int res_w){
     std::string mid = "0";
     for(int i = 1; i < res_w/32 - 1; i++){
-        int a = rand()%35;
+        int a = rand()%30;
         if(a == 1){
             mid += "s";
         }
