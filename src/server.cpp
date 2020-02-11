@@ -3,7 +3,7 @@
 
 using namespace std;
 
-#include "structures.hpp"
+#include "include/structures.hpp"
 
 PP_data pos1;
 PP_data pos2;
@@ -12,7 +12,7 @@ Thread_data data1;
 Thread_data data2;
 
 
-#include "connection.hpp"
+#include "include/connection.hpp"
 
 
 string push_port1 = "4041"; //tcp://localhost:
@@ -28,17 +28,18 @@ int main()
     Connection player1(push_port1, pull_port1);
     Connection player2(push_port2, pull_port2);
 
-    data1.pos = player1.pullPos();
+    //data1.pos = player1.pullPos();
     cout << "there" << endl;
     
-    data2.pos = player2.pullPos();
+    //data2.pos = player2.pullPos();
     cout << "there" << endl;
 
-    player1.pushPos(data2.pos);
-    player2.pushPos(data1.pos);
+    //player1.pushPos(data2.pos);
+    //player2.pushPos(data1.pos);
 
     player1.flags = {true,true};
     player2.flags = {true,true};
+
 
     player1.pullPosThreaded(&data1);
     player2.pullPosThreaded(&data2);
@@ -50,8 +51,10 @@ int main()
     bool WORK = true;
     string x;
     while(WORK){
-        cin >> x;
-        if(x == "q"){
+        //cin >> x;
+        //if(x == "q") break;
+        if(data1.pos.CLOSE == true && data2.pos.CLOSE == true){
+            cout << "exit..." << endl;
             break;
         }
     }

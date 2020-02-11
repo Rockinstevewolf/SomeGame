@@ -1,4 +1,5 @@
-sub_*.cpp
+sub_noclasses.cpp
+sub_oldschool.cpp
 main_*
 test*
 view*

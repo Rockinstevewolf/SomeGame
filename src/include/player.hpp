@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
-#include "include/map.hpp"
-#include "include/config.hpp"
+#include "map.hpp"
 
 using namespace sf;
 
