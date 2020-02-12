@@ -35,8 +35,8 @@ public:
     Flags flags = {false, false};
 
     Connection(string port_push, string port_pull){
-        address_push = "tcp://localhost:" + port_push;
-        address_pull = "tcp://*:" + port_pull;
+        address_push = port_push;
+        address_pull = port_pull;
 
         context = zmq_ctx_new();
 

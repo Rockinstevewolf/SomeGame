@@ -12,8 +12,8 @@ using namespace sf;
 PP_data my_pos = {RES_WIDTH-w-32,RES_HEIGHT-h-32,emp,false};
 PP_data *enemy_pos;
 
-string push_port = "8080"; //tcp://localhost:
-string pull_port = "8081"; //tcp://*:
+string push_port = "tcp://localhost:8080"; //tcp://localhost:
+string pull_port = "tcp://*:8081"; //tcp://*:
 bool MOVING = false;
 
 int main()

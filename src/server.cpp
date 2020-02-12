@@ -15,11 +15,11 @@ Thread_data data2;
 #include "include/connection.hpp"
 
 
-string push_port1 = "4041"; //tcp://localhost:
-string pull_port1 = "4040"; //tcp://*:
+string push_port1 = "tcp://localhost:4041"; //tcp://localhost:
+string pull_port1 = "tcp://*:4040"; //tcp://*:
 
-string push_port2 = "8081"; //tcp://localhost:
-string pull_port2 = "8080"; //tcp://*:
+string push_port2 = "tcp://localhost:8081"; //tcp://localhost:
+string pull_port2 = "tcp://*:8080"; //tcp://*:
 
 
 

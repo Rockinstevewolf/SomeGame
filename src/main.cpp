@@ -12,8 +12,8 @@ using namespace sf;
 PP_data my_pos = {32,32,emp,false};
 PP_data *enemy_pos;
 
-string push_port = "4040"; //tcp://localhost:
-string pull_port = "4041"; //tcp://*:
+string push_port = "tcp://localhost:4040"; //tcp://localhost:
+string pull_port = "tcp://*:4041"; //tcp://*:
 bool MOVING = false;
 
 int main()
