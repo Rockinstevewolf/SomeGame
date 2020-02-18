@@ -6,11 +6,14 @@
 #include <sys/types.h> 
 #include "zmq.h"
 
+#include "structures.hpp"
+
 #include <pthread.h>
 
 using namespace std;
 
 bool PAUSE;
+bool LOGGING = true;
 
 void* ptp_get(void *args);
 
@@ -140,7 +143,12 @@ void* ptp_send(void *args){
     bool WORK = true;
     while(WORK){
         if(data->flags.MOVING && PAUSE == false){
-            cout << "sending...   " << "x = " << data->pos.x  << " y = " << data->pos.y << endl;
+            if(LOGGING){
+                if(data->pos.SHOOT)
+                    cout << "sending...   " << "SHOOT" << " =dir= " << data->pos.dir << endl;
+                else
+                    cout << "sending...   " << "x = " << data->pos.x  << " y = " << data->pos.y << endl;
+            }
             zmq_msg_init_size(&send, sizeof(PP_data));
             memcpy(zmq_msg_data(&send), &data->pos, sizeof(PP_data));
             zmq_msg_send(&send, push, 0);

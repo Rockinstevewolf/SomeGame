@@ -5,17 +5,14 @@
 #include <sys/types.h>
 #include "zmq.h"
 
-typedef struct Spr_data{
-	int x0, y0;
-	int w,h;
-}Spr_data;
-
 typedef struct PP_data{
+    bool SHOOT;
     float x;
     float y;
-    pair <int,int>spr;
-    //Spr_data spr;
+    int sprnum;
+    int dir;
     bool CLOSE;
+    bool PAUSE;
 }PP_data;
 
 typedef struct Flags{

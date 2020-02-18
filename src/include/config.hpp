@@ -1,19 +1,10 @@
 #pragma once
 
 #include <iostream>
-#include "structures.hpp"
 
 float w = 32, h = 32;
 
 float speed = 0.3;
-/*
-Spr_data emp = {0,0,0,0};
-
-Spr_data d1 = {27,5,40,90}, d2 = {124,5,40,90}, d3 = {220,5,40,90};
-Spr_data l1 = {5,135,90,60}, l2 = {101,135,90,60}, l3 = {197,135,90,60};
-Spr_data r1 = {0,230,90,60}, r2 = {96,230,90,60}, r3 = {192,230,90,60};
-Spr_data u1 = {27,293,40,90}, u2 = {124,293,40,90}, u3 = {220,293,40,90};
-*/
 
 pair <int,int>emp(0,0);
 
