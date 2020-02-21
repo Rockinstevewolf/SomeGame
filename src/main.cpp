@@ -227,6 +227,7 @@ int main()
                 player.sprnum = 0;
             }
             animStay = 0;
+            my_pos.sprnum = player.sprnum;
         }
         player.update(time, enemy);
         PLAYER_DEAD = player_hp.update(player, enemy_bullet.ENEMYHIT);
@@ -252,6 +253,7 @@ int main()
         my_pos.sprnum = player.sprnum;
         my_pos.x = player.X();
         my_pos.y = player.Y();
+        my_pos.dir = player.dir;
         //my_pos.health = player_hp.health;
         my_data.pos = my_pos;
 

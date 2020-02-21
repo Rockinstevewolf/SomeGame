@@ -228,11 +228,11 @@ int main()
                 player.sprnum = 0;
             }
             animStay = 0;
+            my_pos.sprnum = player.sprnum;
         }
         player.update(time, enemy);
         PLAYER_DEAD = player_hp.update(player, enemy_bullet.ENEMYHIT);
         ENEMY_DEAD = enemy_hp.update(enemy, player_bullet.ENEMYHIT);
-
 
         player_bullet.update(time,enemy);
         if(enemy_data.pos.SHOOT){
@@ -246,15 +246,15 @@ int main()
             else if(enemy_bullet.dir == 1)
                 enemy_bullet.setPosition(x - 16, y + 9);
             else if(enemy_bullet.dir == 3)
-                enemy_bullet.setPosition(x + 32, y + 9); 
+                enemy_bullet.setPosition(x + 32, y + 9);
             enemy_bullet.SHOOT = true;
         }
         enemy_bullet.update(time,player);
-
         //player_hp.health = my_data.pos.health;
         my_pos.sprnum = player.sprnum;
         my_pos.x = player.X();
         my_pos.y = player.Y();
+        my_pos.dir = player.dir;
         //my_pos.health = player_hp.health;
         my_data.pos = my_pos;
 

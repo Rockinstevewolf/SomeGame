@@ -85,9 +85,6 @@ public:
     float Y(){
         return y;
     }
-    void changeSprite(){
-
-    }
 
     void interactionMap(){
         for(int j = y/32; j < (y + w)/32; j++){
