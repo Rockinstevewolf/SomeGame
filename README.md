@@ -1,5 +1,6 @@
 # Simple platformer top view shooting game for two players for local network
 
+![screen](https://user-images.githubusercontent.com/32313621/75625996-99d09700-5bd4-11ea-8c1d-d34f57ce4302.PNG)
 
 ## PACKAGES
 	- "zmq" for making connectivity
