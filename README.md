@@ -1,5 +1,7 @@
 # Simple platformer top view shooting game for two players for local network
 
+![screen](/screen.png)
+
 ## PACKAGES
 	- "zmq" for making connectivity
 	- "SFML" for making graphics
